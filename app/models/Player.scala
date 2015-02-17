@@ -1,16 +1,23 @@
 package models
 
-import securesocial.core.{AuthenticationMethod, BasicProfile}
-import securesocial.core.providers.{UsernamePasswordProvider, MailToken}
+import securesocial.core.{PasswordInfo, AuthenticationMethod, BasicProfile}
+import securesocial.core.providers.MailToken
 import service.User
 
-import scala.slick.lifted.{Query, TableQuery}
+import play.api.Play.current
+import play.api.db.slick._
+import play.api.db.slick.Config.driver.simple._
 
 object Player {
-  var players = TableQuery[PlayersTable]
+  val players = TableQuery[PlayersTable]
 
   def getUser(userId: String): Option[User] = {
-    players.filter(_.id == userId)
+    DB.withSession{
+      implicit session => players.filter(_.id === userId).firstOption match {
+        case Some(result) => Some(new User(BasicProfile("", result._1, None, None, None, Some(result._2), None, AuthenticationMethod.UserPassword, passwordInfo = Some(PasswordInfo(result._3, result._4, Some(result._5))))))
+        case None => None
+      }
+    }
   }
 
   def getUserByEMail(email: String): Option[User] = {
@@ -21,7 +28,7 @@ object Player {
     None
   }
 
-  def saveMailToken(token: MailToken) : MailToken = None
+  def saveMailToken(token: MailToken) : MailToken = { token }
 
   def getMailToken(uuid: String): Option[MailToken] = None
 
