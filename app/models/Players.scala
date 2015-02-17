@@ -1,5 +1,6 @@
 package models
 
+import models.database.PlayerTable
 import securesocial.core.{PasswordInfo, AuthenticationMethod, BasicProfile}
 import securesocial.core.providers.MailToken
 import service.User
@@ -8,13 +9,13 @@ import play.api.Play.current
 import play.api.db.slick._
 import play.api.db.slick.Config.driver.simple._
 
-object Player {
-  val players = TableQuery[PlayersTable]
+object Players {
+  val players = TableQuery[PlayerTable]
 
   def getUser(userId: String): Option[User] = {
     DB.withSession{
       implicit session => players.filter(_.id === userId).firstOption match {
-        case Some(result) => Some(new User(BasicProfile("", result._1, None, None, None, Some(result._2), None, AuthenticationMethod.UserPassword, passwordInfo = Some(PasswordInfo(result._3, result._4, Some(result._5))))))
+        case Some(result) => Some(new User(BasicProfile("", result.id, None, None, None, Some(result.email), None, AuthenticationMethod.UserPassword, passwordInfo = Some(PasswordInfo(result.hasher, result.password, result.salt)))))
         case None => None
       }
     }

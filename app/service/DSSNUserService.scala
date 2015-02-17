@@ -1,6 +1,6 @@
 package service
 
-import models.Player
+import models.Players
 import play.api.Logger
 import securesocial.core._
 import securesocial.core.providers.MailToken
@@ -11,7 +11,7 @@ class DSSNUserService extends UserService[User] {
   val logger = Logger("application.controllers.InMemoryUserService")
 
   def find(providerId: String, userId: String): Future[Option[BasicProfile]] = {
-    val result: Option[BasicProfile] = Player.getUser(userId) match {
+    val result: Option[BasicProfile] = Players.getUser(userId) match {
       case None   => None
       case player => Some(player.get.main)
     }
@@ -20,7 +20,7 @@ class DSSNUserService extends UserService[User] {
   }
 
   def findByEmailAndProvider(email: String, providerId: String): Future[Option[BasicProfile]] = {
-    val result: Option[BasicProfile] = Player.getUserByEMail(email) match {
+    val result: Option[BasicProfile] = Players.getUserByEMail(email) match {
       case None   => None
       case player => Some(player.get.main)
     }
@@ -32,41 +32,40 @@ class DSSNUserService extends UserService[User] {
     val newUser = new User(user)
     mode match {
       case SaveMode.SignUp =>
-        Player.saveUser(newUser)
+        Players.saveUser(newUser)
         Future.successful(newUser)
       //Nothing to do, we only support one profile, so just note that he's logged in now and be finished ... maybe we should log something here?
       case SaveMode.LoggedIn => Future.successful(newUser)
-      case SaveMode.PasswordChange => {
+      case SaveMode.PasswordChange =>
         updatePasswordInfo(newUser, user.passwordInfo.get)
         Future.successful(newUser)
-      }
     }
   }
 
   def saveToken(token: MailToken): Future[MailToken] = {
-    Future.successful(Player.saveMailToken(token))
+    Future.successful(Players.saveMailToken(token))
   }
 
   def findToken(token: String): Future[Option[MailToken]] = {
-    Future.successful(Player.getMailToken(token))
+    Future.successful(Players.getMailToken(token))
   }
 
   def deleteToken(uuid: String): Future[Option[MailToken]] = {
-    Future.successful(Player.deleteMailToken(uuid))
+    Future.successful(Players.deleteMailToken(uuid))
   }
 
   def deleteExpiredTokens() {
-    Player.deleteExpiredMailTokens()
+    Players.deleteExpiredMailTokens()
   }
 
   override def updatePasswordInfo(user: User, info: PasswordInfo): Future[Option[BasicProfile]] = {
     val updatedUser = new User(user.main.copy(passwordInfo = Some(info)))
-    Future.successful(Player.saveUser(updatedUser))
+    Future.successful(Players.saveUser(updatedUser))
   }
 
   override def passwordInfoFor(user: User): Future[Option[PasswordInfo]] = {
     Future.successful {
-      Player.getUser(user.main.userId) match {
+      Players.getUser(user.main.userId) match {
         case None => None
         case Some(result) => Some(result).get.main.passwordInfo
       }
