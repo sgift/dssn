@@ -1,6 +1,6 @@
 package service
 
-import models.Players
+import models.{MailTokens, Players}
 import play.api.Logger
 import securesocial.core._
 import securesocial.core.providers.MailToken
@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import securesocial.core.services.{ UserService, SaveMode }
 
 class DSSNUserService extends UserService[User] {
-  val logger = Logger("application.controllers.InMemoryUserService")
+  val logger = Logger("application.controllers.DSSNUserService")
 
   def find(providerId: String, userId: String): Future[Option[BasicProfile]] = {
     val result: Option[BasicProfile] = Players.getUser(userId) match {
@@ -43,19 +43,19 @@ class DSSNUserService extends UserService[User] {
   }
 
   def saveToken(token: MailToken): Future[MailToken] = {
-    Future.successful(Players.saveMailToken(token))
+    Future.successful(MailTokens.saveMailToken(token))
   }
 
   def findToken(token: String): Future[Option[MailToken]] = {
-    Future.successful(Players.getMailToken(token))
+    Future.successful(MailTokens.getMailToken(token))
   }
 
   def deleteToken(uuid: String): Future[Option[MailToken]] = {
-    Future.successful(Players.deleteMailToken(uuid))
+    Future.successful(MailTokens.deleteMailToken(uuid))
   }
 
   def deleteExpiredTokens() {
-    Players.deleteExpiredMailTokens()
+    MailTokens.deleteExpiredMailTokens()
   }
 
   override def updatePasswordInfo(user: User, info: PasswordInfo): Future[Option[BasicProfile]] = {
@@ -67,7 +67,7 @@ class DSSNUserService extends UserService[User] {
     Future.successful {
       Players.getUser(user.main.userId) match {
         case None => None
-        case Some(result) => Some(result).get.main.passwordInfo
+        case Some(result) => result.main.passwordInfo
       }
     }
   }
