@@ -28,9 +28,21 @@ object MailTokens {
     }
   }
 
-  def deleteMailToken(uuid: String) : Option[MailToken] = None
+  def deleteMailToken(uuid: String) : Option[MailToken] = {
+    DB.withSession {
+      implicit session => mailTokens.filter(_.uuid === uuid).delete match {
+        case 0 => None
+        //Fake token: We do not want to issue a select for every delete just to get the full token info
+        case _ => Some(MailToken(uuid, "", new DateTime(0), new DateTime(0), isSignUp = false))
+      }
+    }
+  }
 
-  def deleteExpiredMailTokens() = Unit
+  def deleteExpiredMailTokens() = {
+    DB.withSession {
+      implicit session => mailTokens.filter(_.expirationTime < new Timestamp(DateTime.now().getMillis)).delete
+    }
+  }
 
   private def socialSecureTokenToDBToken(mailToken: MailToken) : models.database.MailToken = {
     models.database.MailToken(mailToken.uuid, mailToken.email, new Timestamp(mailToken.creationTime.getMillis), new Timestamp(mailToken.expirationTime.getMillis), mailToken.isSignUp)
